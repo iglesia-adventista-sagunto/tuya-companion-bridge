@@ -1,0 +1,12 @@
+{
+  "port": 5000,
+  "devices": [
+    {
+      "name": "DeviceName",
+      "id": "tuya_device_id_here",
+      "ip": "192.168.1.50",
+      "key": "tuya_local_key_here",
+      "version": "3.3"
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+services:
+  tuya-companion-bridge:
+    build: .
+    container_name: tuya-companion-bridge
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./config.json:/app/config.json:ro
+    environment:
+      - PYTHONUNBUFFERED=1
+      - CONFIG_PATH=/app/config.json
+    # Optional: If your homeserver has multiple subnets or isolates Docker bridges:
+    # network_mode: host

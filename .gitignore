@@ -1,0 +1,30 @@
+# Configuration files with real credentials/tokens
+config.json
+*.local.json
+tinytuya.json
+snapshot.json
+devices.json
+
+# Environment variables & secrets
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+
+# Python artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+venv/
+.venv/
+env/
+ENV/
+
+# Logs & temp files
+*.log
+*.tmp
+.DS_Store
+Thumbs.db

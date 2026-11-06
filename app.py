@@ -104,10 +104,12 @@ def health():
         "devices": dev_summary,
         "endpoints": {
             "GET /status": "Status of default device",
+            "GET /is_on": "Plaintext true/false state of default device",
             "GET,POST /on": "Turn ON default device",
             "GET,POST /off": "Turn OFF default device",
             "GET,POST /toggle": "Toggle default device",
             "GET /<device>/status": "Status of specific device (by name or id)",
+            "GET /<device>/is_on": "Plaintext true/false state of specific device",
             "GET,POST /<device>/on": "Turn ON specific device",
             "GET,POST /<device>/off": "Turn OFF specific device",
             "GET,POST /<device>/toggle": "Toggle specific device"
@@ -157,6 +159,24 @@ def get_status(device_ref=None):
         "id": entry["id"],
         **metrics
     })
+
+@app.route("/is_on", methods=["GET"])
+@app.route("/<device_ref>/is_on", methods=["GET"])
+def get_is_on(device_ref=None):
+    entry = resolve_device(device_ref)
+    if not entry:
+        return "false", 404
+
+    with entry["lock"]:
+        st = entry["device"].status()
+
+    if "Error" in st:
+        logger.error(f"Failed to query {entry['name']}: {st}")
+        return "false", 503
+
+    dps = st.get("dps", {})
+    is_on = dps.get("1", False)
+    return ("true" if is_on else "false"), 200, {"Content-Type": "text/plain; charset=utf-8"}
 
 @app.route("/on", methods=["GET", "POST"])
 @app.route("/<device_ref>/on", methods=["GET", "POST"])

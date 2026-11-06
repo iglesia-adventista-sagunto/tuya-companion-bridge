@@ -127,7 +127,8 @@ Or double-click `start.bat`.
 | Toggle | GET / POST | `http://<server-ip>:5000/toggle` | Switch state |
 | Turn ON | GET / POST | `http://<server-ip>:5000/on` | Power on |
 | Turn OFF | GET / POST | `http://<server-ip>:5000/off` | Power off |
-| Status | GET | `http://<server-ip>:5000/status` | Current state and telemetry |
+| Status | GET | `http://<server-ip>:5000/status` | Current state and telemetry (JSON) |
+| Is ON | GET | `http://<server-ip>:5000/is_on` | Plaintext `true` or `false` (ideal for Companion) |
 
 ### Named Device
 
@@ -137,10 +138,62 @@ Or double-click `start.bat`.
 | Turn ON | GET / POST | `http://<server-ip>:5000/<device-name>/on` |
 | Turn OFF | GET / POST | `http://<server-ip>:5000/<device-name>/off` |
 | Status | GET | `http://<server-ip>:5000/<device-name>/status` |
+| Is ON | GET | `http://<server-ip>:5000/<device-name>/is_on` |
+
+---
+
+## Adding a New Device (Obtaining Device ID & Local Key)
+
+Every Tuya device has its own unique 16-character `local_key`. To add another device to the bridge:
+
+1. **Pair the Device**:
+   - Add the device to your **Tuya Smart** or **Smart Life** mobile app as usual.
+
+2. **Retrieve Credentials from Tuya Cloud Platform**:
+   - Log in to [Tuya IoT Platform](https://platform.tuya.com/).
+   - Navigate to **Cloud** ➔ **Development** ➔ **Project Management**.
+   - Open your project and go to the **Project Overview / Basic Information** tab.
+   - Copy your **Access ID / Client ID** and **Access Secret / Client Secret**.
+
+3. **Run the TinyTuya Wizard**:
+   - In your terminal / command prompt, run:
+     ```bash
+     python -m tinytuya wizard
+     ```
+   - Enter your **API Key** (Access ID) and **API Secret** (Access Secret) when prompted.
+   - Select your data center region (e.g., `eu` for Europe, `us` for Americas).
+   - TinyTuya will query your account and list all paired devices with their **Device ID**, **IP Address**, and **Local Key** (saved to `devices.json`).
+
+4. **Update `config.json`**:
+   - Add the new device entry under the `"devices"` array in `config.json`:
+     ```json
+     {
+       "name": "living-room-plug",
+       "id": "<NEW_DEVICE_ID>",
+       "ip": "192.168.1.xxx",
+       "key": "<NEW_16_CHAR_LOCAL_KEY>",
+       "version": "3.4"
+     }
+     ```
+
+5. **Restart the Bridge**:
+   - **Docker**:
+     ```bash
+     docker compose restart
+     ```
+   - **Systemd**:
+     ```bash
+     sudo systemctl restart tuya-bridge
+     ```
+   - **Windows / Manual**: Restart the running Python process or `start.bat`.
+
+The new device endpoints will automatically become available (e.g. `/<device-name>/toggle`).
 
 ---
 
 ## Bitfocus Companion Setup
+
+### 1. Basic Control (Toggle / On / Off)
 
 1. Open Companion web UI at `http://<companion-ip>:8000`.
 2. Under **Connections**, add **Generic HTTP Requests**.
@@ -149,6 +202,37 @@ Or double-click `start.bat`.
    - Under **Press Actions**, add **generic-http: HTTP GET**.
    - Set URL:
      ```text
-     http://<server-ip>:5000/toggle
+     http://$(custom:servicio_enchufes_ip):5000/pulpito/toggle
      ```
 4. Press the button to test.
+
+---
+
+### 2. Live Button Feedback (Color on/off state)
+
+To have the button automatically turn **Green when ON** and back to default when OFF:
+
+1. **Create Custom Variable**:
+   - Go to **Variables** ➔ **Custom Variables** tab in Companion.
+   - Click **Add custom variable**:
+     - Name: `pulpito_state`
+     - Default value: `false`
+
+2. **Create Periodic Polling Trigger**:
+   - Go to **Triggers** tab ➔ **Add Trigger**.
+   - **Name**: `Poll Pulpito State`
+   - **Events**: Add **Time: Interval** ➔ set interval to `2000 ms`.
+   - **Actions**: Add **generic-http: HTTP GET**:
+     - **URL**: `http://$(custom:servicio_enchufes_ip):5000/pulpito/is_on`
+     - **JSON Response Data Variable**: Select `custom:pulpito_state`
+     - **Store result as text**: **Checked** (ON)
+   - Enable the trigger (switch to **Active**).
+
+3. **Add Button Feedback**:
+   - Go to your button ➔ **Feedbacks** tab ➔ **Add feedback**.
+   - Select **internal: Variable: Check boolean value** (or **Variable: Check value**).
+   - **Variable**: `custom:pulpito_state`
+   - **Condition**: `== true` (or equal to string `true`).
+   - Style:
+     - **Background Color**: Green (`#00ff00`)
+     - **Text Color**: Black or White

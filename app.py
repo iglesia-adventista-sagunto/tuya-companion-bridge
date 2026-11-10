@@ -52,6 +52,11 @@ class TuyaDiscoveryListener(threading.Thread):
             try:
                 s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
                 s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+                if hasattr(socket, "SO_REUSEPORT"):
+                    try:
+                        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
+                    except Exception:
+                        pass
                 s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
                 s.bind(("", p))
                 s.setblocking(False)
@@ -160,7 +165,8 @@ for dev in devices_list:
     key = dev["key"]
     version = float(dev.get("version", 3.4))
 
-    outlet = tinytuya.OutletDevice(dev_id, ip or "0.0.0.0", key)
+    # Use placeholder "127.0.0.1" if dynamic IP so tinytuya doesn't invoke internal find_device()
+    outlet = tinytuya.OutletDevice(dev_id, ip or "127.0.0.1", key)
     outlet.set_version(version)
     outlet.set_socketPersistent(False)
     outlet.set_socketTimeout(3)

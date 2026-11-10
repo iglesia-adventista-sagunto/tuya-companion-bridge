@@ -4,9 +4,9 @@
     {
       "name": "DeviceName",
       "id": "tuya_device_id_here",
-      "ip": "192.168.1.50",
+      "ip": "auto",
       "key": "tuya_local_key_here",
-      "version": "3.3"
+      "version": "3.4"
     }
   ]
 }

@@ -4,15 +4,26 @@ Local REST HTTP bridge to control Tuya Smart Plugs from Bitfocus Companion or HT
 
 ---
 
+## Key Features
+
+- **Local LAN Execution**: Direct TCP communication with devices, no Tuya Cloud latency.
+- **Dynamic IP Auto-Discovery**: Tuya devices continuously broadcast their status via UDP (ports 6666 & 6667). The bridge captures these broadcasts in real time, automatically discovering and tracking dynamic DHCP IP changes without requiring static IP reservations or MAC address lookups.
+- **Self-Healing Connection**: If a device changes IP address while running, the bridge re-syncs the new IP and retries the command automatically.
+- **REST Endpoints for Automation**: Clean JSON and plaintext endpoints (`/toggle`, `/on`, `/off`, `/status`, `/is_on`) designed for Bitfocus Companion and scriptable automations.
+- **Thread-Safe**: Per-device locking to prevent race conditions across parallel HTTP requests.
+
+---
+
 ## Files
 
 ```text
 tuya-companion-bridge/
-├── app.py                  # REST API server
+├── app.py                  # REST API server with UDP auto-discovery
 ├── config.template.json    # Device template configuration
 ├── Dockerfile              # Container definition
-├── docker-compose.yml      # Docker Compose definition
+├── docker-compose.yml      # Docker Compose definition (HTTP + UDP ports)
 ├── requirements.txt        # Dependencies
+├── test_app.py             # Test suite (discovery + API endpoints)
 ├── tuya-bridge.service     # Systemd unit file
 ├── start.bat               # Windows start script
 ├── start.sh                # Linux start script
@@ -37,15 +48,18 @@ tuya-companion-bridge/
        {
          "name": "desk-lamp",
          "id": "tuya_device_id_here",
-         "ip": "192.168.1.50",
+         "ip": "auto",
          "key": "tuya_local_key_here",
-         "version": "3.3"
+         "version": "3.4"
        }
      ]
    }
    ```
 
-Supported protocol versions are usually `3.3` or `3.4`. Set a static DHCP reservation on your router so device IP addresses remain constant.
+### Dynamic IP Configuration (`ip` field):
+
+- `"ip": "auto"` (or omit `"ip"`): The bridge automatically discovers the device IP address on the local network via Tuya UDP broadcasts. No router configuration required.
+- `"ip": "192.168.1.50"`: Provide a known IP address as an initial hint. If the device's IP ever changes (e.g. router reboot, dynamic DHCP lease renewal), the bridge automatically detects the change, updates the IP in memory, and re-establishes communication.
 
 > Note: `config.json` contains local private keys and device IDs; it is ignored by git to prevent leaking secrets.
 
@@ -66,7 +80,8 @@ Supported protocol versions are usually `3.3` or `3.4`. Set a static DHCP reserv
    curl http://<server-ip>:5000/health
    ```
 
-If Docker cannot reach your local subnet, set `network_mode: host` in `docker-compose.yml`.
+> **Docker Networking Note:**
+> Tuya auto-discovery listens for local network UDP broadcasts on ports `6666` and `6667`. These ports are mapped in `docker-compose.yml`. On Linux servers, setting `network_mode: host` in `docker-compose.yml` is recommended so the container has full, direct access to the local broadcast domain.
 
 ---
 
@@ -118,9 +133,33 @@ Or double-click `start.bat`.
 
 ---
 
+## Testing
+
+Run the automated test suite:
+
+```bash
+venv/Scripts/python test_app.py
+```
+
+The test suite validates:
+- Background UDP discovery listener binding on ports 6666 and 6667.
+- Automatic resolution of device IDs to dynamic IPs.
+- Health endpoint (`/health`) and device list (`/devices`).
+- Status and plaintext on/off state endpoints (`/status`, `/is_on`).
+- Self-healing recovery when a device's IP address drifts or is unreachable.
+
+---
+
 ## API Reference
 
-### Default Device
+### System Endpoints
+
+| Method | URL | Description |
+| :--- | :--- | :--- |
+| GET | `/` or `/health` | Health check with resolved IP addresses and device status |
+| GET | `/devices` | List all configured devices, current IPs, online state, and metrics |
+
+### Default Device (First in config)
 
 | Action | Method | URL | Description |
 | :--- | :--- | :--- | :--- |
@@ -130,7 +169,7 @@ Or double-click `start.bat`.
 | Status | GET | `http://<server-ip>:5000/status` | Current state and telemetry (JSON) |
 | Is ON | GET | `http://<server-ip>:5000/is_on` | Plaintext `true` or `false` (ideal for Companion) |
 
-### Named Device
+### Named Device (by Name or Device ID)
 
 | Action | Method | URL |
 | :--- | :--- | :--- |
@@ -162,32 +201,24 @@ Every Tuya device has its own unique 16-character `local_key`. To add another de
      ```
    - Enter your **API Key** (Access ID) and **API Secret** (Access Secret) when prompted.
    - Select your data center region (e.g., `eu` for Europe, `us` for Americas).
-   - TinyTuya will query your account and list all paired devices with their **Device ID**, **IP Address**, and **Local Key** (saved to `devices.json`).
+   - TinyTuya will query your account and list all paired devices with their **Device ID** and **Local Key**.
 
 4. **Update `config.json`**:
-   - Add the new device entry under the `"devices"` array in `config.json`:
+   - Add the new device entry under the `"devices"` array in `config.json` (IP can be `"auto"`):
      ```json
      {
        "name": "living-room-plug",
        "id": "<NEW_DEVICE_ID>",
-       "ip": "192.168.1.xxx",
+       "ip": "auto",
        "key": "<NEW_16_CHAR_LOCAL_KEY>",
        "version": "3.4"
      }
      ```
 
 5. **Restart the Bridge**:
-   - **Docker**:
-     ```bash
-     docker compose restart
-     ```
-   - **Systemd**:
-     ```bash
-     sudo systemctl restart tuya-bridge
-     ```
+   - **Docker**: `docker compose restart`
+   - **Systemd**: `sudo systemctl restart tuya-bridge`
    - **Windows / Manual**: Restart the running Python process or `start.bat`.
-
-The new device endpoints will automatically become available (e.g. `/<device-name>/toggle`).
 
 ---
 

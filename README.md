@@ -1,33 +1,62 @@
 # Tuya Companion Bridge
 
-Local REST HTTP bridge to control Tuya Smart Plugs from Bitfocus Companion or HTTP automation clients without cloud dependency.
+[![Python](https://img.shields.io/badge/Python-3.10+-3776AB.svg?style=flat-square&logo=python&logoColor=white)](https://python.org)
+[![Proxmox LXC](https://img.shields.io/badge/Proxmox-LXC%20Appliance-E57000.svg?style=flat-square&logo=proxmox&logoColor=white)](https://www.proxmox.com)
+[![Docker](https://img.shields.io/badge/Docker-Container%20Ready-2496ED.svg?style=flat-square&logo=docker&logoColor=white)](https://www.docker.com)
+[![Systemd](https://img.shields.io/badge/Systemd-Managed%20Service-CC0000.svg?style=flat-square&logo=linux&logoColor=white)](https://systemd.io)
+[![License: MIT](https://img.shields.io/badge/License-MIT-success.svg?style=flat-square)](LICENSE)
+
+Local REST HTTP bridge to control Tuya Smart Plugs from Bitfocus Companion, Stream Deck, or HTTP automation clients with zero cloud latency and native dynamic IP auto-discovery.
+
+---
+
+## Architecture Overview
+
+```mermaid
+flowchart LR
+    client["Bitfocus Companion<br/>/ Automation Client"]
+    subgraph appliance["LXC Container / Docker Host"]
+        bridge["Tuya Companion Bridge<br/>(Flask + Gunicorn)"]
+        listener["UDP Discovery Listener<br/>(Ports 6666 & 6667)"]
+    end
+    plug["Tuya Smart Plug<br/>(Local LAN)"]
+
+    client -->|"HTTP GET/POST<br/>:5000"| bridge
+    bridge -->|"Local TCP Commands<br/>:6668"| plug
+    plug -.->|"UDP Beacons<br/>(Every ~5s)"| listener
+    listener -->|"Sync Dynamic IP"| bridge
+```
 
 ---
 
 ## Key Features
 
-- **Local LAN Execution**: Direct TCP communication with devices, no Tuya Cloud latency.
-- **Dynamic IP Auto-Discovery**: Tuya devices continuously broadcast their status via UDP (ports 6666 & 6667). The bridge captures these broadcasts in real time, automatically discovering and tracking dynamic DHCP IP changes without requiring static IP reservations or MAC address lookups.
-- **Self-Healing Connection**: If a device changes IP address while running, the bridge re-syncs the new IP and retries the command automatically.
-- **REST Endpoints for Automation**: Clean JSON and plaintext endpoints (`/toggle`, `/on`, `/off`, `/status`, `/is_on`) designed for Bitfocus Companion and scriptable automations.
-- **Thread-Safe**: Per-device locking to prevent race conditions across parallel HTTP requests.
+- **Local LAN Execution**: Direct TCP communication with devices — no Tuya Cloud roundtrips or internet dependency.
+- **Dynamic IP Auto-Discovery**: Tuya devices continuously broadcast their status via UDP. The bridge listens on ports `6666` and `6667` in real time, automatically discovering and tracking dynamic DHCP IP changes without requiring static router reservations.
+- **Self-Healing Connection**: If a device's IP shifts while the bridge is running, the bridge dynamically syncs the new address and transparently retries commands.
+- **REST Endpoints for Stream Deck / Companion**: Clean JSON and plaintext endpoints (`/toggle`, `/on`, `/off`, `/status`, `/is_on`).
+- **LXC & Container First**: Includes a native systemd unit, automated LXC installer, and integration with standard LXC `update` workflows.
 
 ---
 
-## Files
+## Repository Structure
 
 ```text
 tuya-companion-bridge/
-├── app.py                  # REST API server with UDP auto-discovery
+├── app.py                  # Core REST API service & UDP discovery engine
 ├── config.template.json    # Device template configuration
-├── Dockerfile              # Container definition
-├── docker-compose.yml      # Docker Compose definition (HTTP + UDP ports)
-├── requirements.txt        # Dependencies
-├── test_app.py             # Test suite (discovery + API endpoints)
-├── tuya-bridge.service     # Systemd unit file
-├── start.bat               # Windows start script
-├── start.sh                # Linux start script
-├── .gitignore              # Git ignore rules
+├── pyproject.toml          # PEP 621 package metadata & CLI entrypoint
+├── requirements.txt        # Python dependencies
+├── Dockerfile              # Hardened container image with HEALTHCHECK
+├── docker-compose.yml      # Multi-port container orchestration (HTTP + UDP)
+├── .dockerignore           # Build exclusion rules (secrets & caches)
+├── install-lxc.sh          # One-command Proxmox / Debian LXC installer
+├── update.sh               # Automated service updater (git pull + pip + restart)
+├── tuya-bridge.service     # Systemd service unit definition
+├── test_app.py             # Automated test suite (discovery + API endpoints)
+├── start.sh                # Linux startup wrapper
+├── start.bat               # Windows startup script
+├── LICENSE                 # MIT License
 └── README.md               # Documentation
 ```
 
@@ -58,16 +87,51 @@ tuya-companion-bridge/
 
 ### Dynamic IP Configuration (`ip` field):
 
-- `"ip": "auto"` (or omit `"ip"`): The bridge automatically discovers the device IP address on the local network via Tuya UDP broadcasts. No router configuration required.
-- `"ip": "192.168.1.50"`: Provide a known IP address as an initial hint. If the device's IP ever changes (e.g. router reboot, dynamic DHCP lease renewal), the bridge automatically detects the change, updates the IP in memory, and re-establishes communication.
+- `"ip": "auto"` (or omit `"ip"`): The bridge automatically discovers the device IP address on the local network via Tuya UDP broadcasts. No router DHCP lease configuration required.
+- `"ip": "192.168.1.50"`: Provide a known IP address as an initial hint. If the device's IP ever changes, the bridge automatically updates the IP in memory and re-establishes communication.
 
 > Note: `config.json` contains local private keys and device IDs; it is ignored by git to prevent leaking secrets.
 
 ---
 
-## Deployment
+## Deployment Options
 
-### Docker Compose
+### Option A: Proxmox / Debian LXC (Recommended)
+
+1. Clone or copy the repository inside your LXC container:
+   ```bash
+   git clone <REPO_URL> /opt/tuya-companion-bridge
+   cd /opt/tuya-companion-bridge
+   ```
+
+2. Run the automated installer as root:
+   ```bash
+   sudo bash install-lxc.sh
+   ```
+   *The installer provisions dependencies, creates the Python venv, enables the systemd service, and links the bridge to the standard LXC `update` command.*
+
+3. Edit `/opt/tuya-companion-bridge/config.json` with your Tuya credentials:
+   ```bash
+   nano /opt/tuya-companion-bridge/config.json
+   systemctl restart tuya-bridge.service
+   ```
+
+#### Updating the LXC Service
+
+Whenever you want to update the bridge to the latest code, simply run:
+
+```bash
+update
+```
+
+*(Or manually run `/opt/tuya-companion-bridge/update.sh`)*. This will:
+1. Fetch and pull the latest code from git.
+2. Upgrade Python dependencies if `requirements.txt` changed.
+3. Gracefully reload and restart `tuya-bridge.service`.
+
+---
+
+### Option B: Docker Compose
 
 1. Copy this folder to your server:
    ```bash
@@ -81,11 +145,11 @@ tuya-companion-bridge/
    ```
 
 > **Docker Networking Note:**
-> Tuya auto-discovery listens for local network UDP broadcasts on ports `6666` and `6667`. These ports are mapped in `docker-compose.yml`. On Linux servers, setting `network_mode: host` in `docker-compose.yml` is recommended so the container has full, direct access to the local broadcast domain.
+> Tuya auto-discovery listens for local network UDP broadcasts on ports `6666` and `6667`. These ports are mapped in `docker-compose.yml`. On Linux servers, setting `network_mode: host` in `docker-compose.yml` is recommended so the container has direct access to the local broadcast domain.
 
 ---
 
-### Windows Native
+### Option C: Windows Native
 
 Run directly with Python:
 
@@ -101,35 +165,6 @@ Run directly with Python:
    ```
 
 Or double-click `start.bat`.
-
----
-
-### Linux Systemd Service
-
-1. Copy project files to `/opt/tuya-companion-bridge`:
-   ```bash
-   sudo cp -r tuya-companion-bridge /opt/tuya-companion-bridge
-   cd /opt/tuya-companion-bridge
-   ```
-
-2. Create virtual environment and install packages:
-   ```bash
-   sudo apt update && sudo apt install -y python3 python3-venv python3-pip
-   sudo python3 -m venv venv
-   sudo ./venv/bin/pip install -r requirements.txt
-   ```
-
-3. Enable and start service:
-   ```bash
-   sudo cp tuya-bridge.service /etc/systemd/system/
-   sudo systemctl daemon-reload
-   sudo systemctl enable --now tuya-bridge
-   ```
-
-4. Check status:
-   ```bash
-   sudo systemctl status tuya-bridge
-   ```
 
 ---
 
@@ -216,8 +251,8 @@ Every Tuya device has its own unique 16-character `local_key`. To add another de
      ```
 
 5. **Restart the Bridge**:
+   - **LXC / Systemd**: `sudo systemctl restart tuya-bridge`
    - **Docker**: `docker compose restart`
-   - **Systemd**: `sudo systemctl restart tuya-bridge`
    - **Windows / Manual**: Restart the running Python process or `start.bat`.
 
 ---

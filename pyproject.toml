@@ -1,0 +1,41 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tuya-companion-bridge"
+version = "1.1.0"
+description = "Local REST HTTP bridge to control Tuya Smart Plugs from Bitfocus Companion or HTTP automation clients with dynamic UDP discovery"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+keywords = ["tuya", "bitfocus-companion", "iot", "smart-plug", "home-automation", "rest-api"]
+authors = [
+    { name = "Tuya Companion Bridge Maintainers" }
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Framework :: Flask",
+    "Intended Audience :: System Administrators",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: Microsoft :: Windows",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Home Automation",
+]
+dependencies = [
+    "tinytuya>=1.20.0",
+    "Flask>=3.0.0",
+    "gunicorn>=21.2.0",
+    "cryptography>=42.0.0",
+]
+
+[project.scripts]
+tuya-bridge = "app:main"
+
+[tool.setuptools]
+py-modules = ["app"]

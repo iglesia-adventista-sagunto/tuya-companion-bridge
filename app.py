@@ -457,9 +457,12 @@ def toggle(device_ref=None):
     logger.info(f"Toggled {entry['name']} ({entry.get('ip')}) -> {res.get('new_state')}")
     return jsonify(res)
 
-if __name__ == "__main__":
+def main():
     logger.info(f"Starting Tuya Companion Bridge on port {port}...")
     try:
         app.run(host="0.0.0.0", port=port)
     finally:
         discovery_listener.stop()
+
+if __name__ == "__main__":
+    main()

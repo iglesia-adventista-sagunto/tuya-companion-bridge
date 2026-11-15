@@ -1,0 +1,214 @@
+{
+    "result": [
+        {
+            "active_time": 1794741921,
+            "biz_type": 0,
+            "category": "cz",
+            "create_time": 1793191771,
+            "icon": "smart/icon/ay15411637549816BiPW/3a4ca641e1e3e8cab98e4fcd7ac62153.jpg",
+            "id": "bf762fb74262cdaab8hocg",
+            "ip": "84.124.123.51",
+            "lat": "0",
+            "local_key": "EsuTBD-|#7O60.7{",
+            "lon": "0",
+            "model": "new",
+            "name": "Pulpito",
+            "online": true,
+            "owner_id": "227541774",
+            "product_id": "cjmlhojdldlsdalv",
+            "product_name": "Smart plug",
+            "status": [
+                {
+                    "code": "switch_1",
+                    "value": false
+                },
+                {
+                    "code": "countdown_1",
+                    "value": 0
+                },
+                {
+                    "code": "add_ele",
+                    "value": 560
+                },
+                {
+                    "code": "cur_current",
+                    "value": 0
+                },
+                {
+                    "code": "cur_power",
+                    "value": 0
+                },
+                {
+                    "code": "cur_voltage",
+                    "value": 2279
+                },
+                {
+                    "code": "voltage_coe",
+                    "value": 572
+                },
+                {
+                    "code": "electric_coe",
+                    "value": 28194
+                },
+                {
+                    "code": "power_coe",
+                    "value": 15335
+                },
+                {
+                    "code": "electricity_coe",
+                    "value": 2710
+                },
+                {
+                    "code": "fault",
+                    "value": 0
+                },
+                {
+                    "code": "relay_status",
+                    "value": "last"
+                },
+                {
+                    "code": "overcharge_switch",
+                    "value": false
+                },
+                {
+                    "code": "light_mode",
+                    "value": "relay"
+                },
+                {
+                    "code": "child_lock",
+                    "value": false
+                },
+                {
+                    "code": "cycle_time",
+                    "value": ""
+                },
+                {
+                    "code": "random_time",
+                    "value": ""
+                },
+                {
+                    "code": "switch_inching",
+                    "value": ""
+                }
+            ],
+            "sub": false,
+            "time_zone": "+01:00",
+            "uid": "eu1741422380053juhYR",
+            "update_time": 1794741954,
+            "uuid": "1be51173439f0beb",
+            "category_name": "Socket",
+            "gateway_id": ""
+        },
+        {
+            "active_time": 1794741825,
+            "biz_type": 0,
+            "category": "cz",
+            "create_time": 1741422568,
+            "icon": "smart/icon/ay1544008322541hl9iQ/9aebc86a6392f0b9495d826cba17ba54.jpg",
+            "id": "bf1cc5dacdccb68106ps1x",
+            "ip": "84.124.123.51",
+            "lat": "0",
+            "local_key": "pXn(F69;0bN13$^r",
+            "lon": "0",
+            "model": "EU02A-\u4e2d\u6027\u6b27\u89c4EU02A-16A\u8ba1\u91cfCB2S-BK7231N \u8fc7\u5145\u4fdd\u62a4",
+            "name": "Jovenes",
+            "online": true,
+            "owner_id": "227541774",
+            "product_id": "newhgkiotowsaryi",
+            "product_name": "Smart Plug",
+            "status": [
+                {
+                    "code": "switch_1",
+                    "value": true
+                },
+                {
+                    "code": "countdown_1",
+                    "value": 0
+                },
+                {
+                    "code": "add_ele",
+                    "value": 67
+                },
+                {
+                    "code": "cur_current",
+                    "value": 142
+                },
+                {
+                    "code": "cur_power",
+                    "value": 252
+                },
+                {
+                    "code": "cur_voltage",
+                    "value": 2282
+                },
+                {
+                    "code": "voltage_coe",
+                    "value": 579
+                },
+                {
+                    "code": "electric_coe",
+                    "value": 28444
+                },
+                {
+                    "code": "power_coe",
+                    "value": 15374
+                },
+                {
+                    "code": "electricity_coe",
+                    "value": 2710
+                },
+                {
+                    "code": "fault",
+                    "value": 0
+                },
+                {
+                    "code": "relay_status",
+                    "value": "last"
+                },
+                {
+                    "code": "overcharge_switch",
+                    "value": false
+                },
+                {
+                    "code": "light_mode",
+                    "value": "relay"
+                },
+                {
+                    "code": "child_lock",
+                    "value": false
+                },
+                {
+                    "code": "cycle_time",
+                    "value": ""
+                },
+                {
+                    "code": "random_time",
+                    "value": ""
+                },
+                {
+                    "code": "switch_inching",
+                    "value": ""
+                }
+            ],
+            "sub": false,
+            "time_zone": "+01:00",
+            "uid": "eu1741422380053juhYR",
+            "update_time": 1794741827,
+            "uuid": "6651d55744319c00",
+            "category_name": "Socket",
+            "gateway_id": ""
+        }
+    ],
+    "success": true,
+    "t": 1794742774154,
+    "tid": "3aa2e944e0e911f18d07aa3b86ba43e6",
+    "fetches": 1,
+    "total": 2,
+    "file": {
+        "name": "tuya-raw.json",
+        "description": "Full raw list of Tuya devices.",
+        "account": "5qftgrgdwf3kus8dfgyt",
+        "date": "2026-11-15T12:39:33.870255",
+        "tinytuya": "1.20.0"
+    }
+}
